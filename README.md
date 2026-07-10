@@ -39,65 +39,62 @@ It is not a framework or a CLI. It's a set of files you copy, adapt, and own.
 
 ## File reference
 
-A one-line explanation of every file, grouped by folder.
-
 ### `ai/`
 
-- **`AGENTS.md`** — Template for Claude/Cursor project context: what the project is, stack, coding conventions, testing rules, what to avoid, and a "current focus" section to keep updated. Copy to the project root and fill in the placeholders. This is the single most important file in the repo — it's what stops every AI session from starting cold.
-- **`copilot-instructions.md`** — Same purpose as `AGENTS.md`, reformatted for GitHub Copilot, which looks for it at `.github/copilot-instructions.md`. Keep the two in sync by hand, or run the `sync-context` skill to check for drift between them.
+- **`AGENTS.md`**: Template for Claude/Cursor project context: what the project is, stack, coding conventions, testing rules, what to avoid, and a "current focus" section to keep updated. Copy to the project root and fill in the placeholders. This is the single most important file in the repo. It's what stops every AI session from starting cold.
+- **`copilot-instructions.md`**: Same purpose as `AGENTS.md`, reformatted for GitHub Copilot, which looks for it at `.github/copilot-instructions.md`. Keep the two in sync by hand, or run the `sync-context` skill to check for drift between them.
 
 ### `skills/`
 
-Drop these into `.claude/skills/<name>/SKILL.md` (or wherever your Claude Code setup expects them) — `scripts/bootstrap.sh` does this automatically.
+Drop these into `.claude/skills/<name>/SKILL.md` (or wherever your Claude Code setup expects them). `scripts/bootstrap.sh` does this automatically.
 
-- **`skill-a11y.md`** — Runs an automated accessibility audit against a running dev server, with a fallback chain (axe-core → Lighthouse → pa11y), and reports WCAG violations grouped by severity with fix suggestions.
-- **`skill-github.md`** — GitHub CLI workflows for issues and PRs, plus a rebase-based (not merge-based) conflict resolution process for keeping history linear.
-- **`skill-review-tests.md`** — Reviews test files for quality issues an AI-written test suite tends to have: tautological assertions, wrong expected values, missing edge cases, weak `toBeTruthy` checks.
-- **`skill-sync-context.md`** — Reads `AGENTS.md` and `copilot-instructions.md`, extracts the rules each one states, and reports where they've drifted apart (a rule that's only in one file, or stated inconsistently in both).
+- **`skill-a11y.md`**: Runs an automated accessibility audit against a running dev server, with a fallback chain (axe-core → Lighthouse → pa11y), and reports WCAG violations grouped by severity with fix suggestions.
+- **`skill-github.md`**: GitHub CLI workflows for issues and PRs, plus a rebase-based (not merge-based) conflict resolution process for keeping history linear.
+- **`skill-review-tests.md`**: Reviews test files for quality issues an AI-written test suite tends to have: tautological assertions, wrong expected values, missing edge cases, weak `toBeTruthy` checks.
+- **`skill-sync-context.md`**: Reads `AGENTS.md` and `copilot-instructions.md`, extracts the rules each one states, and reports where they've drifted apart (a rule that's only in one file, or stated inconsistently in both).
 
 ### `git/hooks/`
 
-- **`README.md`** — Husky + lint-staged setup instructions. Documents three hooks: `pre-commit` (lint-staged on staged files only — fast), `pre-push` (full test suite — slower, catches what commit-time linting can't), and an optional `commit-msg` hook enforcing Conventional Commits.
+- **`README.md`**: Husky + lint-staged setup instructions. Documents three hooks: `pre-commit` (lint-staged on staged files only - fast), `pre-push` (full test suite - slower, catches what commit-time linting can't), and an optional `commit-msg` hook enforcing Conventional Commits.
 
 ### `git/workflows/`
 
-- **`ci.yml`** — Runs on every push/PR to `main`: install, lint, type-check, test with coverage, upload the coverage artifact. The gate that can't be bypassed with `--no-verify`.
-- **`security.yml`** — Two jobs: secret scanning with gitleaks (catches committed credentials the "never commit secrets" rule only used to say, not check) and `npm audit` for known vulnerabilities. Runs on push/PR and weekly, so newly disclosed CVEs in existing dependencies get caught even without a code change.
+- **`ci.yml`**: Runs on every push/PR to `main`: install, lint, type-check, test with coverage, upload the coverage artifact. The gate that can't be bypassed with `--no-verify`.
+- **`security.yml`**: Two jobs: secret scanning with gitleaks (catches committed credentials the "never commit secrets" rule only used to say, not check) and `npm audit` for known vulnerabilities. Runs on push/PR and weekly, so newly disclosed CVEs in existing dependencies get caught even without a code change.
 
 ### `git/`
 
-- **`dependabot.yml`** — Weekly automated PRs for outdated npm packages (grouped by dev vs. production dependencies) and GitHub Actions versions, so patching isn't something you have to remember to do manually.
+- **`dependabot.yml`**: Weekly automated PRs for outdated npm packages (grouped by dev vs. production dependencies) and GitHub Actions versions, so patching isn't something you have to remember to do manually.
 
 ### `testing/`
 
-- **`setup.md`** — Full setup for Vitest + React Testing Library + Playwright + MSW: install commands, `vitest.config.ts`, coverage thresholds, file conventions, and side-by-side examples of a specific/readable test versus a vague one.
+- **`setup.md`**: Full setup for Vitest + React Testing Library + Playwright + MSW: install commands, `vitest.config.ts`, coverage thresholds, file conventions, and side-by-side examples of a specific/readable test versus a vague one.
 
 ### `structure/`
 
-- **`project-template.md`** — Standard folder layout and naming conventions (components, hooks, utils, types) for React + TypeScript projects, plus a table of required files every project should have.
-- **`.env.example`** — Template for documenting every environment variable a project uses, with placeholder values only. Copy to the project root as `.env.example`; real values go in a local, gitignored `.env`.
+- **`project-template.md`**: Standard folder layout and naming conventions (components, hooks, utils, types) for React + TypeScript projects, plus a table of required files every project should have.
+- **`.env.example`**: Template for documenting every environment variable a project uses, with placeholder values only. Copy to the project root as `.env.example`; real values go in a local, gitignored `.env`.
 
 ### `scripts/`
 
-- **`bootstrap.sh`** — Copies `AGENTS.md`, Copilot instructions, CI/security workflows, `dependabot.yml`, `LICENSE`, `.env.example`, and all skills into a new project in a single pass. A one-time scaffold, not an installed dependency — the destination project owns the files afterward and can edit them freely.
+- **`bootstrap.sh`**: Copies `AGENTS.md`, Copilot instructions, CI/security workflows, `dependabot.yml`, `LICENSE`, `.env.example`, and all skills into a new project in a single pass. A one-time scaffold, not an installed dependency. The destination project owns the files afterward and can edit them freely.
 
 ### `metrics/`
 
-- **`playbook-health.md`** — A quarterly checklist for whether the playbook is actually working, not just adopted: `--no-verify` usage over time, CI flakiness vs. real catches, coverage trend (not just pass/fail), a11y violation trend, and a before/after comparison template.
+- **`playbook-health.md`**: A quarterly checklist for whether the playbook is actually working, not just adopted: `--no-verify` usage over time, CI flakiness vs. real catches, coverage trend (not just pass/fail), a11y violation trend, and a before/after comparison template.
 
 ### Root
 
-- **`LICENSE`** — MIT.
-- **`.gitignore`** — Standard ignores for this repo itself.
-- **`README.md`** — This file.
-
+- **`LICENSE`**: MIT.
+- **`.gitignore`**: Standard ignores for this repo itself.
+  
 ---
 
 ## How to use it
 
 There is no install step and no required tooling. Browse the folder that's relevant to what you're setting up, copy the files you need, and adapt them to your project.
 
-For a full new project, `scripts/bootstrap.sh /path/to/new-project` copies everything in one pass — AI context files, CI/security workflows, dependabot config, license, env template, and skills — then prints the remaining manual steps (installing Husky, filling in placeholders, running the testing setup guide).
+For a full new project, `scripts/bootstrap.sh /path/to/new-project` copies everything in one pass then prints the remaining manual steps (installing Husky, filling in placeholders, running the testing setup guide).
 
 For AI skills specifically: drop the `.md` files from `skills/` into your project's `.claude/skills/` folder (one subfolder per skill, each containing a `SKILL.md`). Claude picks them up automatically in Claude Code.
 
