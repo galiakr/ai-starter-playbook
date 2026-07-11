@@ -1,6 +1,6 @@
 ---
 name: github
-description: Use this skill for any GitHub operations in the terminal or Claude Code: opening issues, creating pull requests, reviewing PRs, listing issues, adding labels or comments, checking PR status, merging branches, cloning repos, or any other GitHub workflow. Trigger whenever the user mentions issues, PRs, pull requests, tickets, GitHub, wants to interact with a repository, or asks about repo activity.
+description: "Use this skill for any GitHub operations in the terminal or Claude Code: opening issues, creating pull requests, reviewing PRs, listing issues, adding labels or comments, checking PR status, merging branches, cloning repos, or any other GitHub workflow. Trigger whenever the user mentions issues, PRs, pull requests, tickets, GitHub, wants to interact with a repository, or asks about repo activity."
 ---
 
 # GitHub Skill
