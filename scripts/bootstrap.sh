@@ -43,11 +43,13 @@ if [ -f "$SRC_DIR/structure/.env.example" ]; then
   cp "$SRC_DIR/structure/.env.example" "$DEST/.env.example"
 fi
 
-# Claude skills (flat .md files -> one folder per skill, Claude Code convention)
-for skill in "$SRC_DIR"/skills/skill-*.md; do
-  name=$(basename "$skill" .md | sed 's/^skill-//')
-  mkdir -p "$DEST/.claude/skills/$name"
-  cp "$skill" "$DEST/.claude/skills/$name/SKILL.md"
+# Claude skills (one folder per skill, each with a SKILL.md, Claude Code convention)
+mkdir -p "$DEST/.claude/skills"
+for skill in "$SRC_DIR"/skills/*/; do
+  skill=${skill%/}
+  name=$(basename "$skill")
+  rm -rf "$DEST/.claude/skills/$name"
+  cp -R "$skill" "$DEST/.claude/skills/$name"
 done
 
 echo ""

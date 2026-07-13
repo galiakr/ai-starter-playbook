@@ -1,0 +1,10 @@
+key,description,en,es
+common.save,Save button used across all forms,Save,Guardar
+common.cancel,Cancel button used across all forms,Cancel,Cancelar
+common.loading,Shown while data is loading,Loading…,Cargando…
+nav.home,Top navigation link to the home page,Home,Inicio
+nav.settings,Top navigation link to settings,Settings,Ajustes
+home.greeting,"Greeting on the home page. {name} is filled in with the user's first name","Welcome, {name}!","¡Bienvenido, {name}!"
+home.subtitle,Subtitle under the greeting,Here's what's new today.,Esto es lo nuevo de hoy.
+errors.required,Shown under an empty required field,This field is required.,Este campo es obligatorio.
+errors.generic,Fallback error message,Something went wrong. Please try again.,Algo salió mal. Inténtalo de nuevo.

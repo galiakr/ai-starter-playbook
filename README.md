@@ -25,7 +25,7 @@ It is not a framework or a CLI. It's a set of files you copy, adapt, and own.
 | Folder / file | What it contains |
 | -------------- | ----------------- |
 | [`ai/`](ai) | AGENTS.md template and Copilot instructions |
-| [`skills/`](skills) | Claude skills: a11y audit, GitHub CLI, test review, context sync check |
+| [`skills/`](skills) | Claude skills: a11y audit, GitHub CLI, test review, context sync check, language tokens |
 | [`git/hooks/`](git/hooks) | Husky pre-commit and pre-push hook templates |
 | [`git/workflows/`](git/workflows) | GitHub Actions CI and security workflow templates |
 | [`git/dependabot.yml`](git/dependabot.yml) | Automated weekly dependency update config |
@@ -46,12 +46,13 @@ It is not a framework or a CLI. It's a set of files you copy, adapt, and own.
 
 ### `skills/`
 
-Drop these into `.claude/skills/<name>/SKILL.md` (or wherever your Claude Code setup expects them). `scripts/bootstrap.sh` does this automatically.
+Each skill is a folder containing a `SKILL.md` (plus any `assets/` and `references/` it needs). Copy the whole directory into `.claude/skills/` (or wherever your Claude Code setup expects them). `scripts/bootstrap.sh` does this automatically.
 
-- **`skill-a11y.md`**: Runs an automated accessibility audit against a running dev server, with a fallback chain (axe-core → Lighthouse → pa11y), and reports WCAG violations grouped by severity with fix suggestions.
-- **`skill-github.md`**: GitHub CLI workflows for issues and PRs, plus a rebase-based (not merge-based) conflict resolution process for keeping history linear.
-- **`skill-review-tests.md`**: Reviews test files for quality issues an AI-written test suite tends to have: tautological assertions, wrong expected values, missing edge cases, weak `toBeTruthy` checks.
-- **`skill-sync-context.md`**: Reads `AGENTS.md` and `copilot-instructions.md`, extracts the rules each one states, and reports where they've drifted apart (a rule that's only in one file, or stated inconsistently in both).
+- **`a11y/`**: Runs an automated accessibility audit against a running dev server, with a fallback chain (axe-core → Lighthouse → pa11y), and reports WCAG violations grouped by severity with fix suggestions.
+- **`github/`**: GitHub CLI workflows for issues and PRs, plus a rebase-based (not merge-based) conflict resolution process for keeping history linear.
+- **`review-tests/`**: Reviews test files for quality issues an AI-written test suite tends to have: tautological assertions, wrong expected values, missing edge cases, weak `toBeTruthy` checks.
+- **`sync-context/`**: Reads `AGENTS.md` and `copilot-instructions.md`, extracts the rules each one states, and reports where they've drifted apart (a rule that's only in one file, or stated inconsistently in both).
+- **`language-tokens/`**: Sets up a single source of truth for all user-facing text ("language tokens") instead of hard-coding UI strings. Non-coders edit a friendly CSV (one row per token, one column per language, plus a description column); a `generate.py` script converts that CSV to and from the per-language JSON the app reads. Useful for i18n/localization, and worth it even for single-language projects that just want their copy centralized where a content owner can edit it.
 
 ### `git/hooks/`
 
@@ -96,7 +97,7 @@ There is no install step and no required tooling. Browse the folder that's relev
 
 For a full new project, `scripts/bootstrap.sh /path/to/new-project` copies everything in one pass then prints the remaining manual steps (installing Husky, filling in placeholders, running the testing setup guide).
 
-For AI skills specifically: drop the `.md` files from `skills/` into your project's `.claude/skills/` folder (one subfolder per skill, each containing a `SKILL.md`). Claude picks them up automatically in Claude Code.
+For AI skills specifically: copy the skill folders from `skills/` into your project's `.claude/skills/` folder (one folder per skill, each containing a `SKILL.md` plus any `assets/`/`references/`). Claude picks them up automatically in Claude Code.
 
 The `AGENTS.md` template is the most important file. Copy it into every new project, fill in the top section, and update it as the project grows. It is the single biggest thing you can do to improve AI-assisted development on a project.
 
