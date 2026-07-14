@@ -83,17 +83,16 @@ Rules for the wording:
 - Match the surrounding numbering (`### N.` vs `N.`) and heading depth the
   target file already uses.
 
-### 5. Confirm and log
+### 5. Confirm
 
 Re-read the edited file to confirm the step landed in the right place (last
 step, before the output section) and that there's exactly one logging step.
 
-### 6. Log the result
-
-Append one row to `metrics/findings-log.md`: date, project,
-`add-logging-step`, an outcome (`Action taken` if you added the step to one or
-more skills, `Clean` if every skill already had one and nothing needed
-changing), and one sentence naming how many skills you edited and which ones.
+> This skill does **not** log its own run to `metrics/findings-log.md`. That
+> log is a record of what project-check skills found or did in a project;
+> `add-logging-step` edits skill *definitions* in the playbook, so its runs
+> don't belong there. Authoring/meta skills are exempt from the "every skill
+> logs" rule.
 
 ## Output Format
 
@@ -108,8 +107,8 @@ changing), and one sentence naming how many skills you edited and which ones.
 | a11y | yes | skipped |
 | my-new-skill | no | added step 6, outcomes `Clean` / `Action taken` |
 
-**Result:** Added the logging step to 1 skill. Every skill in `skills/` now
-appends to `findings-log.md` on completion.
+**Result:** Added the logging step to 1 skill. Every project-check skill in
+`skills/` now appends to `findings-log.md` on completion.
 
 ---
 
