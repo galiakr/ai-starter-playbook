@@ -49,7 +49,7 @@ tokens/
     └── ...
 ```
 
-Copy `assets/generate.py` into the project's token folder, and seed `tokens.csv` from `assets/tokens.template.csv`. Fill the CSV with a handful of real strings pulled from the project so the user sees their own text, not lorem ipsum.
+Copy `assets/generate.py` into the project's token folder, and seed `tokens.csv` from `assets/tokens.template.csv` with a handful of real strings pulled from the project so the user sees their own text, not lorem ipsum.
 
 **CSV format** (this is what the non-coder edits):
 
@@ -107,6 +107,10 @@ Leave the user with the simple cycle:
 3. The app now shows the updated text. Adding a language = add one column and regenerate.
 
 If the project has a build step, suggest wiring the generate command into it so JSON is never stale. Offer to add it, but don't assume the build setup — ask.
+
+### Step 6 — Log the result
+
+Append one row to `metrics/findings-log.md`: date, project, `language-tokens`, an outcome (`Action taken`), and one sentence covering what was centralized — how many strings migrated, how many languages, and whether an existing i18n setup was extended rather than replaced.
 
 ## Notes
 

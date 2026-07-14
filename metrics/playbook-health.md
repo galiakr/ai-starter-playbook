@@ -1,11 +1,26 @@
 # Playbook Health Check
 
 This playbook makes claims ("this reduces AI-introduced bugs," "this catches
-low-quality tests") that are currently unmeasured. Run this check quarterly,
-or after adopting the playbook into a new project, to see if it's actually
-doing anything.
+low-quality tests") that would otherwise be unmeasured. Run this check
+quarterly, or after adopting the playbook into a new project. It pulls from
+`metrics/findings-log.md` — the raw, per-run data — rather than starting
+from scratch each time.
 
-## 1. Are the gates being bypassed?
+## 0. Pull the raw data
+
+Before anything else, open `findings-log.md` and filter to the period you're
+reviewing. Everything below is analysis of that log, not a separate
+investigation.
+
+## 1. Which skills are earning their place?
+
+For each skill, count from the log: how many runs, how many were `Clean` vs.
+`Found`, and whether findings were real (led to a fix or a filed issue) or
+noise. A skill with many runs and zero findings ever is either confirming
+solid code or isn't sensitive enough to be useful — the log won't tell you
+which, but it tells you to go check.
+
+## 2. Are the gates being bypassed?
 
 ```bash
 git log --all --grep="no-verify" --oneline
@@ -16,7 +31,7 @@ A rising count means the local hooks are friction people route around, not
 guardrails people trust. If it's happening often, the hooks are probably too
 slow or too strict — fix the hook, don't just note the workaround.
 
-## 2. Is CI catching real problems, or just failing on noise?
+## 3. Is CI catching real problems, or just failing on noise?
 
 Pull the last 20 CI runs on `main` and classify each failure:
 - caught a real bug/regression
@@ -30,23 +45,17 @@ gh run list --branch main --limit 20 --json conclusion,name,createdAt
 High flaky-failure rate erodes trust in the pipeline faster than it prevents
 bugs — treat it as a bug in the pipeline itself.
 
-## 3. Is coverage trending, not just passing?
+## 4. Is coverage trending, not just passing?
 
 Coverage passing the 80% gate tells you nothing about whether it's trending
-up or down over time. Track the number from the CI coverage artifact each
+up or down over time — and per the `review-tests` skill's coverage-scope
+check, confirm the denominator is still the full source tree before trusting
+the percentage at all. Track the number from the CI coverage artifact each
 month:
 
-| Month | Line coverage | Function coverage |
-|-------|---------------|--------------------|
-|       |               |                    |
-
-## 4. Is the a11y skill actually run, and what does it find?
-
-Since it's on-demand (not automatic), it's only useful if someone remembers
-to run it. Track:
-- last date `/a11y` (or equivalent) was run
-- violation count by severity at that run
-- whether violation count is going down across runs
+| Month | Line coverage | Function coverage | Scope verified? |
+|-------|---------------|--------------------|-------------------|
+|       |               |                    |                   |
 
 ## 5. Before/after comparison
 
@@ -56,6 +65,7 @@ and one that didn't (or a before/after on the same project), and compare:
 - time-to-detect for regressions (caught in CI vs. caught in production)
 - PR review comments flagging things the hooks/skills should have caught
 
-Write the result here, even if it's inconclusive — an honest "no measurable
-difference yet, sample size too small" is more credible than an unverified
-claim of success.
+Cross-reference against `findings-log.md` for concrete examples rather than
+impressions — write the result here, even if it's inconclusive. An honest
+"no measurable difference yet, sample size too small" is more credible than
+an unverified claim of success.

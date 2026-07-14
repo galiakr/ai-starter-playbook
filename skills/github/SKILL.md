@@ -1,6 +1,6 @@
 ---
 name: github
-description: "Use this skill for any GitHub operations in the terminal or Claude Code: opening issues, creating pull requests, reviewing PRs, listing issues, adding labels or comments, checking PR status, merging branches, cloning repos, or any other GitHub workflow. Trigger whenever the user mentions issues, PRs, pull requests, tickets, GitHub, wants to interact with a repository, or asks about repo activity."
+description: Use this skill for any GitHub operations in the terminal or Claude Code: opening issues, creating pull requests, reviewing PRs, listing issues, adding labels or comments, checking PR status, merging branches, cloning repos, or any other GitHub workflow. Trigger whenever the user mentions issues, PRs, pull requests, tickets, GitHub, wants to interact with a repository, or asks about repo activity.
 ---
 
 # GitHub Skill
@@ -139,6 +139,24 @@ git push --force-with-lease
 - Prefer `git rebase origin/main` over `git merge origin/main` for linear history
 - If the conflict is in a generated file (e.g. `package-lock.json`), delete it, re-run `npm install`, then `git add` and `git rebase --continue`
 - Use `git diff --name-only --diff-filter=U` to list all unresolved files
+
+---
+
+## Triaging findings from other skills (a11y, review-tests)
+
+When asked to open and assign issues from another skill's findings:
+
+1. **Check for existing issues first** — search open and recently closed issues (`gh issue list --search "<keyword>"`) before creating new ones. If a finding is already tracked, add the appropriate label and a comment with the concrete repro/root cause/fix instead of opening a duplicate. Avoiding duplicate issues is part of the job, not an edge case.
+2. **Label consistently** — use labels that describe the finding's category (`bug`, `accessibility`, `tests`, `enhancement`), not just a generic `todo`.
+3. **Assign to the requester** unless told otherwise.
+4. **Report a summary**, not just a list of numbers: how many were new vs. recognized as existing, and why — that judgment call is worth surfacing, not hiding inside a terse "done."
+
+## Log the result
+
+Append one row to `metrics/findings-log.md`: date, project, `github`, an
+outcome (`Action taken`), and one sentence covering how many issues were
+newly opened vs. recognized as already-tracked. The duplicate-avoidance
+count is worth keeping — it's evidence of judgment, not just throughput.
 
 ---
 

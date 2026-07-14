@@ -23,6 +23,8 @@ You are performing a focused code review of the test files in this project. Your
 
 5. **Report findings** grouped by file, with line numbers where applicable — with the coverage-scope finding (if any) reported first, before any file-level findings.
 
+6. **Log the result.** Append one row to `metrics/findings-log.md`: date, project, `review-tests`, an outcome (`Clean`, `Found → Fixed` if issues were fixed this run, or `Found — open`), and one sentence covering the coverage-scope result plus the count of test-quality issues found. If the coverage-scope check found a mismatch, say so explicitly in the log line even if you also fixed it — that's the finding worth being able to look back on.
+
 ## Review Criteria
 
 ### Coverage scope (checked first, applies to the whole report)

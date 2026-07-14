@@ -92,6 +92,14 @@ Read the report and group violations by severity.
 kill %1
 ```
 
+### 6. Log the result
+
+Append one row to `metrics/findings-log.md`: date, project, `a11y`, an
+outcome (`Clean` if 0 violations, `Found → Fixed` if you fixed them this
+run, `Found — open` if violations remain), and one sentence naming the
+violation count and root cause if there was one. A clean run is worth
+logging too — it's evidence the practice is holding, not nothing to report.
+
 ---
 
 ## Output Format

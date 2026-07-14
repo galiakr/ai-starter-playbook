@@ -43,6 +43,15 @@ if [ -f "$SRC_DIR/structure/.env.example" ]; then
   cp "$SRC_DIR/structure/.env.example" "$DEST/.env.example"
 fi
 
+# Metrics templates (blank — the project fills in its own rows)
+mkdir -p "$DEST/metrics"
+if [ -f "$SRC_DIR/metrics/findings-log.md" ]; then
+  cp "$SRC_DIR/metrics/findings-log.md" "$DEST/metrics/findings-log.md"
+fi
+if [ -f "$SRC_DIR/metrics/playbook-health.md" ]; then
+  cp "$SRC_DIR/metrics/playbook-health.md" "$DEST/metrics/playbook-health.md"
+fi
+
 # Claude skills (one folder per skill, each with a SKILL.md, Claude Code convention)
 mkdir -p "$DEST/.claude/skills"
 for skill in "$SRC_DIR"/skills/*/; do

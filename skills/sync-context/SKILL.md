@@ -34,6 +34,11 @@ Your job is to read both files and report where they disagree.
 4. **Do not silently fix anything.** Report the drift; let the developer
    decide which file is the source of truth for that rule.
 
+5. **Log the result.** Append one row to `metrics/findings-log.md`: date,
+   project, `sync-context`, an outcome (`Clean` if fully in sync, or
+   `Found — open`), and one sentence naming the number of conflicts and
+   only-in-one-file rules found.
+
 ## Output Format
 
 ---
