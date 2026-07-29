@@ -22,18 +22,18 @@ It is not a framework or a CLI. It's a set of files you copy, adapt, and own.
 
 ## What's inside
 
-| Folder / file                              | What it contains                                                                                                                                                                                                         |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`ai/`](ai)                                | AGENTS.md template and Copilot instructions                                                                                                                                                                              |
-| [`skills/`](skills)                        | Claude skills: a11y audit, GitHub CLI, test review (with coverage-scope verification), context sync check, language-tokens (i18n/copy centralization), add-logging-step (retrofit the metrics-logging step into a skill) |
-| [`git/hooks/`](git/hooks)                  | Husky pre-commit and pre-push hook setup guide                                                                                                                                                                           |
-| [`git/workflows/`](git/workflows)          | GitHub Actions CI and security workflow templates                                                                                                                                                                        |
-| [`git/dependabot.yml`](git/dependabot.yml) | Automated weekly dependency update config                                                                                                                                                                                |
-| [`testing/`](testing)                      | Testing setup guide (Vitest, RTL, Playwright)                                                                                                                                                                            |
-| [`structure/`](structure)                  | Recommended project folder structure, naming conventions, and `.env.example` template                                                                                                                                    |
-| [`scripts/`](scripts)                      | One-time bootstrap script to scaffold a new project from this repo                                                                                                                                                       |
-| [`metrics/`](metrics)                      | **Templates only** — a blank findings log and a quarterly health-check guide. Each project that adopts this playbook fills in its own copy; nothing here is pre-filled with any project's actual results.                |
-| [`LICENSE`](LICENSE)                       | MIT license for this repo                                                                                                                                                                                                |
+| Folder / file                              | What it contains                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`ai/`](ai)                                | AGENTS.md template and Copilot instructions                                                                                                                                                                                                                                                                                                 |
+| [`skills/`](skills)                        | Claude skills: a11y audit, GitHub CLI, test review (with coverage-scope verification), context sync check, language-tokens (i18n/copy centralization), add-logging-step (retrofit the metrics-logging step into a skill), project-memory (stale-checklist + findings-log cleanup), security-review (judgment-level checks CI doesn't cover) |
+| [`git/hooks/`](git/hooks)                  | Husky pre-commit and pre-push hook setup guide                                                                                                                                                                                                                                                                                              |
+| [`git/workflows/`](git/workflows)          | GitHub Actions CI and security workflow templates                                                                                                                                                                                                                                                                                           |
+| [`git/dependabot.yml`](git/dependabot.yml) | Automated weekly dependency update config                                                                                                                                                                                                                                                                                                   |
+| [`testing/`](testing)                      | Testing setup guide (Vitest, RTL, Playwright)                                                                                                                                                                                                                                                                                               |
+| [`structure/`](structure)                  | Recommended project folder structure, naming conventions, and `.env.example` template                                                                                                                                                                                                                                                       |
+| [`scripts/`](scripts)                      | One-time bootstrap script to scaffold a new project from this repo                                                                                                                                                                                                                                                                          |
+| [`metrics/`](metrics)                      | **Templates only** — a blank findings log and a quarterly health-check guide. Each project that adopts this playbook fills in its own copy; nothing here is pre-filled with any project's actual results.                                                                                                                                   |
+| [`LICENSE`](LICENSE)                       | MIT license for this repo                                                                                                                                                                                                                                                                                                                   |
 
 ---
 
@@ -54,15 +54,17 @@ Copy each skill's whole folder into `.claude/skills/<name>/` (the `SKILL.md` plu
 - **`sync-context/SKILL.md`** — Reads `AGENTS.md` and `copilot-instructions.md`, extracts the rules each one states, and reports where they've drifted apart (a rule that's only in one file, or stated inconsistently in both).
 - **`language-tokens/SKILL.md`** — Centralizes all user-facing text into a single CSV a non-coder can edit, plus a generator script that produces per-language JSON for the app to consume. Adapts to an existing i18n setup instead of replacing it, migrates strings incrementally rather than all at once, and refuses to invent translations it isn't confident about.
 - **`add-logging-step/SKILL.md`** — Retrofits the "log the result" step into a skill that doesn't have one yet, so every skill run appends a row to `metrics/findings-log.md`. Scans for skills missing the step, skips ones that already have it, and picks the outcome vocabulary (`Clean`, `Found → Fixed`, `Action taken`, …) that fits each skill's nature. This is the skill that keeps the "every project-check skill logs its results" invariant true as you add new skills. (It doesn't add a step to itself — authoring skills like this one don't log to a project's findings record.)
+- **`project-memory/SKILL.md`** — Checks `AGENTS.md`'s "known issues / current focus" checklist against the actual repo state instead of trusting the checkboxes (the motivating case: a project whose checklist said "deploy to Vercel" long after it had already shipped to GitHub Pages with a live link in the README), and archives — never deletes — resolved rows out of `metrics/findings-log.md` once their linked issues close, so the log stays readable as it grows instead of accumulating indefinitely.
+- **`security-review/SKILL.md`** — Judgment-level security review scoped specifically to what CI's gitleaks/`npm audit` gate _doesn't_ catch: unsafe rendering patterns (`dangerouslySetInnerHTML` on user-controlled input), auth checks that only exist client-side, missing security headers/CORS misconfiguration, triaging existing `npm audit` findings for actual runtime reachability rather than treating every CVE as equally urgent, and secrets that may predate gitleaks adoption sitting in git history. Explicitly states its own limits — it's a heuristic code review, not a substitute for a professional audit on anything handling payments or regulated data.
 
 ### `git/hooks/`
 
-- **`README.md`** — Husky + lint-staged setup instructions. Documents three hooks: `pre-commit` (lint-staged on staged files only is fast), `pre-push` (full test suite is slower, catches what commit-time linting can't), and an optional `commit-msg` hook enforcing conventional Commits.
+- **`README.md`** — Husky + lint-staged setup instructions. Documents three hooks: `pre-commit` (lint-staged on staged files only — fast), `pre-push` (full test suite — slower, catches what commit-time linting can't), and an optional `commit-msg` hook enforcing Conventional Commits.
 
 ### `git/workflows/`
 
 - **`ci.yml`** — Runs on every push/PR to `main`: install, lint, type-check, test with coverage, upload the coverage artifact. The gate that can't be bypassed with `--no-verify`.
-- **`security.yml`** — Two jobs: secret scanning with gitleaks and `npm audit` for known vulnerabilities. Runs on push/PR and weekly, so newly disclosed CVEs in existing dependencies get caught even without a code change.
+- **`security.yml`** — Two jobs: secret scanning with gitleaks and `npm audit` for known vulnerabilities. Runs on push/PR and weekly, so newly disclosed CVEs in existing dependencies get caught even without a code change. (The `security-review` skill picks up where this leaves off — see above.)
 
 ### `git/`
 
@@ -79,11 +81,11 @@ Copy each skill's whole folder into `.claude/skills/<name>/` (the `SKILL.md` plu
 
 ### `scripts/`
 
-- **`bootstrap.sh`** — Copies `AGENTS.md`, Copilot instructions, CI/security workflows, `dependabot.yml`, `LICENSE`, `.env.example`, all skills, and a blank `metrics/` folder into a new project in a single pass. A one-time scaffold, not an installed dependency. The destination project owns the files afterward and can edit them freely.
+- **`bootstrap.sh`** — Copies `AGENTS.md`, Copilot instructions, CI/security workflows, `dependabot.yml`, `LICENSE`, `.env.example`, all skill folders, and a blank `metrics/` folder into a new project in a single pass. A one-time scaffold, not an installed dependency — the destination project owns the files afterward and can edit them freely.
 
 ### `metrics/`
 
-- **`findings-log.md`** — A blank template. Once copied into a real project, every skill run appends a row here: date, skill, outcome, and a one-sentence detail.
+- **`findings-log.md`** — A blank template. Once copied into a real project, every skill run appends a row here: date, skill, outcome, and a one-sentence detail. `project-memory` is what keeps this from growing unbounded.
 - **`playbook-health.md`** — A quarterly checklist that reads from that project's `findings-log.md` rather than starting from scratch: which skills are earning their place, whether `--no-verify` usage is rising, whether CI failures are real catches or flaky noise, whether coverage is trending (not just passing), and a before/after comparison template.
 
 ### Root
@@ -101,13 +103,14 @@ This part is easy to set up wrong, so it's worth being explicit: **`metrics/` in
 Here's the actual flow:
 
 1. `scripts/bootstrap.sh` copies a _blank_ `metrics/findings-log.md` and `metrics/playbook-health.md` into a new project, the same way it copies a blank `AGENTS.md`.
-2. From then on, that project's copy is local and self-contained. Every time you run `a11y`, `review-tests`, `github`, or any other skill in that project, the skill's last step appends one row to _that project's_ `findings-log.md`.
+2. From then on, that project's copy is local and self-contained. Every time you run `a11y`, `review-tests`, `github`, `sync-context`, `language-tokens`, or `security-review` in that project, the skill's last step appends one row to _that project's_ `findings-log.md`.
 3. Over time, each project accumulates its own history: what each skill has actually found, not just what it's supposed to catch in theory.
-4. Quarterly (or whenever you're checking in on a project), `playbook-health.md` reads that project's own log to answer questions like "is this skill actually finding anything" and "is `--no-verify` usage creeping up".
-5. If you want a cross-project view, comparing findings across every project that's adopted the playbook, that's a manual step you do yourself during a health check, copying interesting rows out of each project's local log. Nothing automates that rollup, because a Claude Code session working inside one project's repo can't see the others.
-6. **If you use a skill that isn't in this repo** (a built-in Claude Code skill, or a third-party one), it won't have a "log the result" step, since there's no `SKILL.md` here to add one to. You'd add that row to the findings log by hand or use the `add-logging-step` skill.
+4. `project-memory` periodically archives resolved rows out of that log (never deletes) and checks `AGENTS.md`'s checklist against reality, so the record stays useful instead of turning into noise.
+5. Quarterly (or whenever you're checking in on a project), `playbook-health.md` reads that project's own log to answer questions like "is this skill actually finding anything" and "is `--no-verify` usage creeping up."
+6. If you want a cross-project view — comparing findings across every project that's adopted the playbook — that's a manual step you do yourself during a health check, copying interesting rows out of each project's local log. Nothing automates that rollup, because a Claude Code session working inside one project's repo can't see the others.
+7. **If you use a skill that isn't in this repo** (a built-in Claude Code skill, or a third-party one), it won't have a "log the result" step, since there's no `SKILL.md` here to add one to — you'd add that row to the findings log by hand, or use `add-logging-step` if you've copied that skill's definition in locally first.
 
-The reason this exists at all: a rule or a check is easy to write down and easy to assume is helping. This system is a memory of what a check actually caught, run by run, project by project.
+The reason this exists at all: a rule or a check is easy to write down and easy to assume is helping. This system is a memory of what a check actually caught, run by run, project by project — and now, with `project-memory`, a system for keeping that memory from becoming clutter.
 
 ---
 
@@ -115,9 +118,11 @@ The reason this exists at all: a rule or a check is easy to write down and easy 
 
 There is no install step and no required tooling. Browse the folder that's relevant to what you're setting up, copy the files you need, and adapt them to your project.
 
-For a full new project, `scripts/bootstrap.sh /path/to/new-project` copies everything in one pass. AI context files, CI/security workflows, dependabot config, license, env template, skills, and a blank `metrics/` folder and then prints the remaining manual steps (installing Husky, filling in placeholders, running the testing setup guide).
+For a full new project, `scripts/bootstrap.sh /path/to/new-project` copies everything in one pass — AI context files, CI/security workflows, dependabot config, license, env template, all skill folders, and a blank `metrics/` folder — then prints the remaining manual steps (installing Husky, filling in placeholders, running the testing setup guide).
 
-For AI skills specifically: copy the whole skill folder from `skills/` into your project's `.claude/skills/` folder — one folder per skill, each with its `SKILL.md` plus any `assets/` and `references/` it needs (language-tokens, for example, ships its `generate.py`). Each skill logs its own results to the project's `metrics/findings-log.md` as its final step.
+For AI skills specifically: copy the whole skill folder from `skills/` into your project's `.claude/skills/` folder — one folder per skill, each with its `SKILL.md` plus any `assets/` and `references/` it needs (`language-tokens`, for example, ships its `generate.py`). Each project-check skill logs its own results to the project's `metrics/findings-log.md` as its final step.
+
+The `AGENTS.md` template is the most important file. Copy it into every new project, fill in the top section, and update it as the project grows — or let `project-memory` catch it when you don't.
 
 ---
 
@@ -129,11 +134,13 @@ For AI skills specifically: copy the whole skill folder from `skills/` into your
 
 **Accessibility is not an afterthought.** AI-generated UI tends to skip ARIA labels, landmark regions, and focus management. The a11y skill runs an automated audit and surfaces exactly those gaps.
 
-**Test quality matters more than test quantity.** AI writes tests that pass without proving anything. Tautologies, wrong expected values, assertions that can never fail. The review-tests skill catches these and also checks that the coverage number backing them up is measuring the whole project, not just the one file a test happened to import.
+**Test quality matters more than test quantity.** AI writes tests that pass without proving anything. Tautologies, wrong expected values, assertions that can never fail. The review-tests skill catches these — and also checks that the coverage number backing them up is measuring the whole project, not just the one file a test happened to import.
 
-**Standards you don't understand are worth writing down.** If a convention is in this playbook and you're not sure why, that's a prompt to find out. The goal is to understand your own standards.
+**Automated checks need the same skepticism as the code they check.** `security-review` is scoped deliberately to not duplicate what CI already automates — a check that just re-derives what another check already says isn't adding anything.
 
-**Claims about "this helps" need checking, not just stating.** It's easy to write a rule and assume it works. `metrics/findings-log.md` and `playbook-health.md` exist so each project's history of what these checks actually caught is something I can look at, not just something I assert.
+**Standards you don't understand are worth writing down.** If a convention is in this playbook and you're not sure why, that's a prompt to find out. The goal is to understand your own standards, not just follow them.
+
+**Claims about "this helps" need checking, not just stating — and that record needs upkeep too.** It's easy to write a rule and assume it works. `metrics/findings-log.md` and `playbook-health.md` exist so each project's history of what these checks actually caught is something I can look at, not just something I assert. `project-memory` exists because that history, left alone, becomes exactly the kind of stale, unverified claim this whole philosophy is trying to avoid.
 
 ---
 
