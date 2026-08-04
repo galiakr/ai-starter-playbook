@@ -17,6 +17,8 @@ It's a reference I reuse across my own projects, a starting point if you want so
 - **`git/hooks/`**: Husky pre-commit/pre-push setup.
 - **`git/workflows/`**: CI and security GitHub Actions.
 - **`git/dependabot.yml`**: weekly dependency updates, on autopilot.
+- **`git/pull_request_template.md`**: a PR description template with a checklist so reviews start with context instead of a blank box.
+- **`git/ISSUE_TEMPLATE/`**: a bug report template (repro steps, environment, logs) and a feature request template (problem, proposed solution, alternatives considered), so triage starts with the details you need instead of a one-line "it's broken" or "can we add X."
 - **`testing/`**: Vitest + RTL + Playwright setup guide.
 - **`structure/`**: recommended folder layout, naming conventions, and an `.env.example`.
 - **`scripts/`**: a one-time bootstrap script that scaffolds all of the above into a new project.
@@ -50,6 +52,10 @@ Each one lives in its own folder, copy the whole thing into `.claude/skills/<nam
 
 `dependabot.yml` opens weekly PRs for outdated npm packages (grouped dev vs. production) and GitHub Actions versions, so patching isn't something you have to remember.
 
+`pull_request_template.md` is what GitHub pre-fills into the PR description box: what the change does, how it was tested, and a short checklist (tests, docs, no committed secrets, linked issue). Copy it to `.github/pull_request_template.md` in the destination project and GitHub picks it up automatically.
+
+`ISSUE_TEMPLATE/` holds the forms GitHub shows when someone clicks "New issue," with a picker between them since there's more than one: `bug_report.md` (what happened, steps to reproduce, environment, logs) and `feature_request.md` (problem, proposed solution, alternatives considered). Copy the whole folder to `.github/ISSUE_TEMPLATE/` and GitHub wires it in — no config needed.
+
 ### `testing/`
 
 `setup.md` is the full Vitest + React Testing Library + Playwright + MSW setup: install commands, `vitest.config.ts`, coverage thresholds, file conventions, and a side-by-side of a specific, readable test versus a vague one.
@@ -60,7 +66,7 @@ Each one lives in its own folder, copy the whole thing into `.claude/skills/<nam
 
 ### `scripts/`
 
-`bootstrap.sh` copies `AGENTS.md`, Copilot instructions, the CI/security workflows, `dependabot.yml`, `LICENSE`, `.env.example`, every skill folder, and a blank `metrics/` folder into a new project in one pass. It's a one-time scaffold, not a dependency. The destination project owns the files afterward and can edit them freely.
+`bootstrap.sh` copies `AGENTS.md`, Copilot instructions, the CI/security workflows, `dependabot.yml`, the PR and issue templates, `LICENSE`, `.env.example`, every skill folder, and a blank `metrics/` folder into a new project in one pass. It's a one-time scaffold, not a dependency. The destination project owns the files afterward and can edit them freely.
 
 ### `metrics/`
 
@@ -84,7 +90,7 @@ The reason any of this exists: a rule is easy to write down and easy to assume i
 
 No install step, no required tooling. Browse the folder that's relevant to what you're setting up, copy what you need, adapt it.
 
-For a whole new project, `scripts/bootstrap.sh /path/to/new-project` copies everything in one pass — AI context files, CI/security workflows, dependabot config, license, env template, every skill folder, a blank `metrics/` folder — then prints the manual steps that are left (installing Husky, filling in placeholders, running the testing setup guide).
+For a whole new project, `scripts/bootstrap.sh /path/to/new-project` copies everything in one pass — AI context files, CI/security workflows, dependabot config, PR and issue templates, license, env template, every skill folder, a blank `metrics/` folder — then prints the manual steps that are left (installing Husky, filling in placeholders, running the testing setup guide).
 
 For skills specifically, copy the whole folder from `skills/` into your project's `.claude/skills/`. One folder per skill, `SKILL.md` plus whatever `assets/` or `references/` it needs (`language-tokens` ships a `generate.py`, for example). Each project-check skill logs its own results to `metrics/findings-log.md` as its last step.
 

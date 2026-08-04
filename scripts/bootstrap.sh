@@ -34,6 +34,13 @@ fi
 if [ -f "$SRC_DIR/git/dependabot.yml" ]; then
   cp "$SRC_DIR/git/dependabot.yml" "$DEST/.github/dependabot.yml"
 fi
+if [ -f "$SRC_DIR/git/pull_request_template.md" ]; then
+  cp "$SRC_DIR/git/pull_request_template.md" "$DEST/.github/pull_request_template.md"
+fi
+if [ -d "$SRC_DIR/git/ISSUE_TEMPLATE" ]; then
+  mkdir -p "$DEST/.github/ISSUE_TEMPLATE"
+  cp "$SRC_DIR"/git/ISSUE_TEMPLATE/*.md "$DEST/.github/ISSUE_TEMPLATE/"
+fi
 
 # Root files
 if [ -f "$SRC_DIR/LICENSE" ]; then
