@@ -1,0 +1,69 @@
+# This repo's own CI — validates the playbook's content, not an app.
+# Not to be confused with git/workflows/ci.yml, which is a template meant
+# to be copied into OTHER projects that actually have a package.json.
+#
+# Copy this file to .github/workflows/ci.yml in ai-starter-playbook itself
+# (not into an adopting project).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-workflow-templates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint GitHub Actions workflow templates
+        uses: raven-actions/actionlint@v2
+        with:
+          files: 'git/workflows/*.yml'
+
+  validate-shell-scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shellcheck bootstrap.sh
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: './scripts'
+
+  validate-skills:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Every skill has valid frontmatter
+        run: |
+          fail=0
+          for f in skills/*/SKILL.md; do
+            [ -f "$f" ] || continue
+            head -1 "$f" | grep -q '^---$' || { echo "::error file=$f::Missing frontmatter opening ---"; fail=1; }
+            grep -q '^name:' "$f" || { echo "::error file=$f::Missing 'name:' in frontmatter"; fail=1; }
+            grep -q '^description:' "$f" || { echo "::error file=$f::Missing 'description:' in frontmatter"; fail=1; }
+          done
+          exit $fail
+
+      - name: No orphaned flat skill files from the old structure
+        run: |
+          orphans=$(find skills -maxdepth 1 -name "skill-*.md" -type f 2>/dev/null || true)
+          if [ -n "$orphans" ]; then
+            echo "::error::Found orphaned flat skill files (should be skills/<name>/SKILL.md):"
+            echo "$orphans"
+            exit 1
+          fi
+
+      - name: Every skill folder is documented in README
+        run: |
+          missing=0
+          for dir in skills/*/; do
+            name=$(basename "$dir")
+            grep -q "$name/SKILL.md" README.md || { echo "::warning::Skill '$name' exists but isn't documented in README.md"; missing=1; }
+          done
+          exit 0   # warning only — doesn't fail the build, just flags it
