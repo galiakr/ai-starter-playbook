@@ -94,11 +94,14 @@ kill %1
 
 ### 6. Log the result
 
-Append one row to `metrics/findings-log.md`: date, project, `a11y`, an
+Get the actual current date with `date +%F` rather than guessing it, then
+append one row to `metrics/findings-log.md`: date, project, `a11y`, an
 outcome (`Clean` if 0 violations, `Found → Fixed` if you fixed them this
 run, `Found — open` if violations remain), and one sentence naming the
-violation count and root cause if there was one. A clean run is worth
-logging too — it's evidence the practice is holding, not nothing to report.
+violation count and root cause if there was one. Every run gets a row,
+including clean ones — a `Clean` result is logged exactly like a finding,
+not skipped because there was nothing to fix. It's evidence the practice is
+holding, not nothing to report.
 
 ---
 

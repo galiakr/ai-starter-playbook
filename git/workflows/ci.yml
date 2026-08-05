@@ -36,3 +36,63 @@ jobs:
         with:
           name: coverage
           path: coverage/
+
+  audit-skill-security:
+    # Mechanical subset of the audit-skills skill (dangerous command
+    # patterns, prompt-injection-style phrasing) — the parts a fixed
+    # pattern can catch without an agent's judgment call. Only runs if
+    # .claude/skills/ exists in this project. Skip this job (or remove it)
+    # if you never adopted the skills/ folder from ai-starter-playbook.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan skills for dangerous command patterns
+        run: |
+          fail=0
+          check() {
+            file="$1"; level="$2"; label="$3"; pattern="$4"
+            matches=$(grep -nE "$pattern" "$file" || true)
+            [ -z "$matches" ] && return 0
+            while IFS= read -r m; do
+              echo "::$level file=$file::$label — $m"
+            done <<< "$matches"
+            [ "$level" = "error" ] && fail=1
+            return 0
+          }
+          for f in .claude/skills/*/SKILL.md; do
+            [ -f "$f" ] || continue
+            # audit-skills/SKILL.md legitimately quotes these patterns as
+            # examples of what to look for — scanning it would just flag itself.
+            [ "$f" = ".claude/skills/audit-skills/SKILL.md" ] && continue
+
+            check "$f" error "Possible network call with no obvious tie to the skill's purpose" 'curl |wget |\bnc[[:space:]]+-|\bnetcat\b|\bncat\b'
+            check "$f" error "sudo usage" 'sudo'
+            check "$f" error "rm -rf" 'rm -rf'
+            check "$f" error "Obfuscated/eval'd command" 'base64 -d|base64 --decode|eval \$\('
+            # Credentials/SSH-path references need context to judge (a
+            # security-review-style skill legitimately reads .env) — warn,
+            # don't fail.
+            check "$f" warning "References credentials/SSH paths — confirm this matches the skill's stated purpose" '\.ssh|\.aws|id_rsa|\.env\b|credentials'
+          done
+          exit $fail
+
+      - name: Scan skills for prompt-injection-style phrasing
+        run: |
+          fail=0
+          check() {
+            file="$1"; pattern="$2"
+            matches=$(grep -niE "$pattern" "$file" || true)
+            [ -z "$matches" ] && return 0
+            while IFS= read -r m; do
+              echo "::error file=$file::Language aimed at the agent rather than the user — $m"
+            done <<< "$matches"
+            fail=1
+            return 0
+          }
+          for f in .claude/skills/*/SKILL.md; do
+            [ -f "$f" ] || continue
+            [ "$f" = ".claude/skills/audit-skills/SKILL.md" ] && continue
+            check "$f" 'pre-approved|you must comply|takes precedence over other instructions|don'"'"'t mention this to the user|do this silently|skip confirmation|ignore (previous|prior) instructions|disregard (your|other)'
+          done
+          exit $fail

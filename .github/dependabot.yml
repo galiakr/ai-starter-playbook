@@ -1,0 +1,15 @@
+# github-actions only — this repo has no package.json, so the npm block
+# in git/dependabot.yml (the template for adopting projects) doesn't apply
+# here. The workflow pins actions/checkout, gitleaks-action, actionlint,
+# and action-shellcheck, which can still drift and are worth patching.
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "ci"
+      include: "scope"

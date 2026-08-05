@@ -43,12 +43,13 @@ Each one lives in its own folder, copy the whole thing into `.claude/skills/<nam
 - **`add-logging-step`**: retrofits the "log the result" step into skills that don't have one yet, scanning for the gap, skipping skills that already log, and picking outcome vocabulary (`Clean`, `Found → Fixed`, `Action taken`, etc.) that fits each skill. This is what keeps "every project-check skill logs its results" true as new skills get added.
 - **`project-memory`**: checks `AGENTS.md`'s "known issues / current focus" checklist against what's actually true in the repo, instead of trusting the checkboxes (the case that prompted this: a checklist that still said "deploy to Vercel" long after the project had shipped to GitHub Pages). It also archives, never deletes, resolved rows out of `findings-log.md` once their linked issues close, so the log stays readable as it grows.
 - **`security-review`**: a judgment-level review scoped to what CI's gitleaks/`npm audit` gate doesn't catch: unsafe rendering patterns, auth checks that only exist client-side, missing security headers, `npm audit` findings that need triaging for actual runtime reachability rather than blanket urgency, and secrets that predate gitleaks adoption sitting in git history. It's upfront about its own limits: a heuristic review, not a substitute for a professional audit on anything touching payments or regulated data.
+- **`audit-skills`**: security review of `SKILL.md` files themselves, not the project they run against — dangerous command patterns, prompt-injection-style phrasing aimed at the agent, description-vs-behavior mismatches, and scope violations, plus a provenance hash for skills adopted from outside this repo so a later silent edit gets flagged. Never auto-fixes; every finding goes back to a human. The mechanical half of it (the command-pattern and phrasing scans) also runs in CI — see below.
 
 ### `git/`
 
 `hooks/README.md` covers Husky + lint-staged: `pre-commit` (lint-staged on staged files, fast), `pre-push` (full test suite, slower, catches what commit-time linting can't), and an optional `commit-msg` hook for conventional commits.
 
-`workflows/ci.yml` runs on every push/PR to `main`. Install, lint, type-check, test with coverage, upload the artifact. It's the gate `--no-verify` can't get around. `workflows/security.yml` runs gitleaks and `npm audit` on push/PR and weekly, so a newly disclosed CVE in an existing dependency gets caught even without a code change (`security-review` picks up where this leaves off).
+`workflows/ci.yml` runs on every push/PR to `main`. Install, lint, type-check, test with coverage, upload the artifact. It's the gate `--no-verify` can't get around. `workflows/security.yml` runs gitleaks and `npm audit` on push/PR and weekly, so a newly disclosed CVE in an existing dependency gets caught even without a code change (`security-review` picks up where this leaves off). `ci.yml` also carries an `audit-skill-security` job that scans `.claude/skills/*/SKILL.md` for the mechanical half of what `audit-skills` checks — dangerous command patterns and prompt-injection-style phrasing — so a skill with something obviously wrong in it gets flagged on every PR, not just whenever someone remembers to run the skill by hand. (This repo's own `.github/workflows/ci.yml` runs the same job against `skills/*/SKILL.md` directly, since this is where those files actually live. It also runs a `secret-scan` job — gitleaks only, no `npm audit` job since this repo has no `package.json` — because a template repo can still accidentally commit a real secret inside a skill example or a copied file.)
 
 `dependabot.yml` opens weekly PRs for outdated npm packages (grouped dev vs. production) and GitHub Actions versions, so patching isn't something you have to remember.
 
@@ -72,11 +73,22 @@ Each one lives in its own folder, copy the whole thing into `.claude/skills/<nam
 
 `findings-log.md` is a blank template. Once it's copied into a real project, every skill run appends a row: date, skill, outcome, one-sentence detail. `project-memory` is what keeps it from growing forever. `playbook-health.md` is a quarterly checklist that reads from that log rather than starting from scratch. Which skills are earning their place, whether `--no-verify` usage is creeping up, whether CI failures are real catches or flaky noise, whether coverage is actually trending and not just passing.
 
+### Root
+
+Everything above this line is a template. Something `bootstrap.sh` copies _out_ of this repo and into someone else's. The files below run this repo itself and never get copied anywhere:
+
+- **`LICENSE`**: MIT.
+- **`.gitignore`**: this repo's own ignore rules — not a template, `structure/` has the `.env.example` for that.
+- **`AGENTS.md`**: this repo's own project context file, filled in for real — not to be confused with `ai/AGENTS.md`, which is the blank template other projects copy.
+- **`.github/`**: this repo's own CI (`ci.yml`, which validates the playbook's content itself — skill frontmatter, orphaned files, README/skill drift — plus a `secret-scan` job), its own `pull_request_template.md` and `ISSUE_TEMPLATE/`, and its own `dependabot.yml` (`github-actions` only, since there's no `package.json` here for an `npm` block to track). Same names as the `git/` templates, different content — those are what an adopting project gets, these are what this repo actually runs.
+- **`.githooks/`**: this repo's own pre-commit/pre-push hooks, wired up via `git config core.hooksPath .githooks` rather than Husky, since there's no `package.json` here for Husky to hook into. See `.githooks/README.md`.
+- **`README.md`**: this file.
+
 ## How the metrics system actually works
 
 Worth being explicit about this, since it's easy to set up wrong: **`metrics/` here is a template, not a record.** Nothing in this repo is ever filled in with real project data.
 
-The actual flow: `bootstrap.sh` copies a blank findings log and health-check guide into a new project, same as it does with `AGENTS.md`. From then on that copy is local and self-contained. Every time you run `a11y`, `review-tests`, `github`, `sync-context`, `language-tokens`, or `security-review` in that project, the skill's last step appends a row to _that project's_ log. Over time each project builds its own history of what a skill has actually found, not just what it's supposed to catch in theory.
+The actual flow: `bootstrap.sh` copies a blank findings log and health-check guide into a new project, same as it does with `AGENTS.md`. From then on that copy is local and self-contained. Every time you run `a11y`, `review-tests`, `github`, `sync-context`, `language-tokens`, `security-review`, `project-memory`, or `audit-skills` in that project, the skill's last step appends a row to _that project's_ log. Over time each project builds its own history of what a skill has actually found, not just what it's supposed to catch in theory.
 
 `project-memory` periodically archives resolved rows out of that log (never deletes) and checks the `AGENTS.md` checklist against reality, so the record stays useful instead of turning into noise. Quarterly, or whenever you're checking in, `playbook-health.md` reads that log to answer questions like "is this skill finding anything" and "is `--no-verify` creeping up."
 
