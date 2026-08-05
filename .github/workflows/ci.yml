@@ -22,7 +22,7 @@ jobs:
     # running against this repo itself.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # full history so gitleaks can scan past commits on PRs
 
@@ -34,7 +34,7 @@ jobs:
   validate-workflow-templates:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Lint GitHub Actions workflow templates
         uses: raven-actions/actionlint@v2
@@ -44,7 +44,7 @@ jobs:
   validate-shell-scripts:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Shellcheck bootstrap.sh
         uses: ludeeus/action-shellcheck@master
@@ -54,7 +54,7 @@ jobs:
   validate-skills:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Every skill has valid frontmatter
         run: |
@@ -94,7 +94,7 @@ jobs:
     # pattern can catch, same split as security-review vs. security.yml.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Scan skills for dangerous command patterns
         run: |
