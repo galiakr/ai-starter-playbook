@@ -3,8 +3,10 @@
 `audit-skills`' step 6 (provenance tracking) only applies to skills **not
 authored in this repo** — adopted from somewhere else. Every real skill in
 `skills/`, and every other fixture in `fixtures/`, is authored here, so
-step 6 has never actually run against anything. This fixture exists to
-exercise it.
+nothing else exercises step 6. This fixture exists to test it directly —
+see `../results-log.md` for the run that already confirmed it works
+(baseline recorded, drift detected on a second run). Re-run this whenever
+step 6's own logic changes, the same way the other fixtures get re-run.
 
 ## The catch: don't pollute this repo's real provenance record
 

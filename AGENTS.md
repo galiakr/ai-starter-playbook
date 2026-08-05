@@ -30,14 +30,18 @@ testing/        Vitest/RTL/Playwright setup guide
 structure/      Folder layout + .env.example template
 scripts/        bootstrap.sh - scaffolds all of the above into a new project
 metrics/        BLANK TEMPLATES ONLY. See "What to avoid" below
+fixtures/       THIS repo's own proof mechanism — deliberately broken (and
+                deliberately fine-looking) examples that verify a skill
+                catches what it claims to. See fixtures/README.md.
 .github/        THIS repo's own CI, PR/issue templates, dependabot config
 .githooks/      THIS repo's own git hooks (same as git/hooks/ note above)
 ```
 
 The `ai/`, `git/hooks/`, `git/workflows/`, `testing/`, `structure/`,
 `metrics/` folders are things this repo _ships_ to other projects. Don't
-confuse a template with this repo's own configuration. `.github/` and
-`.githooks/` are the real thing, scoped to this repo.
+confuse a template with this repo's own configuration. `fixtures/`,
+`.github/`, and `.githooks/` are the real thing, scoped to this repo —
+none of the three are ever copied by `bootstrap.sh`.
 
 ## Conventions
 
@@ -151,11 +155,21 @@ shellcheck, and the README accurately describes what's in the repo. CI
 
 ## Current focus / known issues
 
-- [ ] `audit-skills`' provenance-hash tracking (`metrics/skill-provenance.md`)
-      has never been exercised — no skill in this repo has been adopted
-      from outside it yet. Trigger and verify it once one is.
+- [x] `audit-skills`' provenance-hash tracking mechanism has been
+      exercised and verified — `fixtures/audit-skills/adopted-skill-simulation/`
+      (see its `HOW-TO-TEST.md`) ran the real two-run procedure against a
+      throwaway copy: baseline hash recorded on run 1, drift correctly
+      detected on run 2. Still true, separately: no skill in this repo's
+      own `skills/` has actually been adopted from outside it, so
+      `metrics/skill-provenance.md` correctly still doesn't exist here —
+      that's a different fact from "the mechanism was never tested."
 - [x] This repo's own CI, hooks, and PR/issue templates were audited
       against the playbook's own philosophy and closed out — root
       `AGENTS.md` (this file), `.githooks/`, `.github/pull_request_template.md`,
       `.github/ISSUE_TEMPLATE/`, `.github/dependabot.yml` (github-actions only),
       and a `secret-scan` job in `.github/workflows/ci.yml`.
+- [x] Six skills now have fixtures under `fixtures/` (`audit-skills`,
+      `a11y`, `review-tests`, `project-memory`, `security-review`,
+      `sync-context`), each actually run for real rather than reasoned
+      about — two real gaps in `security-review/SKILL.md` were found this
+      way and fixed (see `fixtures/security-review/README.md`).

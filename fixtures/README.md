@@ -1,47 +1,63 @@
 # Fixtures
 
-Deliberately broken (or deliberately fine-looking) examples for testing
-whether this playbook's own skills actually catch what they claim to
-catch — and don't cry wolf on what they shouldn't. Not application code,
-not a template handed to adopting projects; `scripts/bootstrap.sh` never
-copies this folder.
+Deliberately broken examples for testing whether this playbook's own
+skills actually catch what they claim to catch — not application code, not
+a template for other projects. This is the missing piece the rest of the
+repo doesn't have: `review-tests` catching the 8queens coverage lie was
+real evidence it works, but it happened by accident, on someone else's
+project. Fixtures make that kind of proof repeatable and deliberate,
+instead of waiting for the next accident.
 
-**Excluded from this repo's own automated scans.** Fixtures live outside
-`skills/`, so `.github/workflows/ci.yml`'s `audit-skill-security` job
-(which scans every `skills/*/SKILL.md` for exactly the patterns planted
-in some of these fixtures) never touches them. If a fixture ever needs to
-sit inside `skills/` for a specific test, add it to that job's exclusion
-list first — the same way `skills/audit-skills/SKILL.md` already is — or
-CI breaks permanently on a file that's supposed to look broken.
+**This directory is excluded from the repo's own automated scans.** It
+lives outside `skills/`, so `.github/workflows/ci.yml`'s
+`audit-skill-security` job (which scans every `skills/*/SKILL.md` for the
+exact patterns planted in the `audit-skills` fixture) never touches it. If
+a fixture ever needs to sit inside `skills/` for a specific test, it must
+be added to that job's exclusion list the same way
+`skills/audit-skills/SKILL.md` already is — don't skip this, or CI breaks
+permanently on a fixture that's supposed to be broken.
 
 ## Structure
+
+Every skill being tested gets its own folder, always the same shape:
 
 ```
 fixtures/
   <skill-name>/
-    README.md            <- what this skill's fixtures cover, how to run them
-    results-log.md       <- every fixture run for this skill, matched or not
-    <scenario>/
-      SKILL.md (or whatever the fixture actually is)
-      expected-findings.md (or HOW-TO-TEST.md, if one run can't test the claim)
+    README.md              <- what's planted, why, how to run it
+    <planted artifact(s)>  <- the deliberately broken file(s) or fixture project
+    expected-findings.md   <- what a correct run should (and should not) catch
+    results-log.md         <- every actual run against this fixture, logged
 ```
 
-One folder per skill being tested, each with its own `README.md` — that's
-where the specifics live. This file only covers what's true across all of
-them. See `fixtures/audit-skills/README.md` for a worked example.
+`results-log.md` is this fixture's own metrics substitute. A skill's real
+`metrics/findings-log.md` records what it found in a real project;
+fixtures don't have a real project, so `results-log.md` plays the same
+role — proof the fixture was actually re-run, not just built once and
+assumed to still pass. Same principle `project-memory` applies to a real
+findings log, one level up.
 
-## The pattern
+## Currently covers
 
-Any skill that makes a specific, checkable claim ("I catch coverage-scope
-mismatches," "I catch stale AGENTS.md items," "I don't flag legitimate
-code") is a candidate for a fixture here — eventually. That last kind of
-claim matters as much as the first: a checker only ever tested against bad
-examples has never had its false-positive rate checked.
+| Skill | What's planted |
+|-------|-----------------|
+| `audit-skills` | A fake skill with one issue per detection category: injection phrasing, an unexplained `curl`, a `.env` read that contradicts its stated purpose, a write outside the project dir |
+| `review-tests` | A coverage config that silently excludes half the source tree, plus tests with a tautological assertion, a wrong expected value, and a missing edge case |
+| `project-memory` | An `AGENTS.md` checklist item that doesn't match reality, plus a findings-log row that should get archived |
+| `sync-context` | An `AGENTS.md`/`copilot-instructions.md` pair where one file states a rule the other silently omits and then contradicts |
+| `security-review` | A cookie-auth route with a real CSRF gap, a bearer-token route that looks the same but isn't (false-positive check), unsanitized rendering, and a hardcoded credential |
+| `a11y` | Missing alt text, an unlabeled input, and low-contrast text, each paired with a correctly-marked-up equivalent (false-positive check) |
 
-## The one rule that holds for all of them
+Any skill making a specific, checkable claim is a candidate for the next
+one.
 
-**Never log a fixture run to `metrics/findings-log.md`.** That file, in
-this repo, never gets real rows — see `AGENTS.md`. A fixture run isn't a
-finding about a real project; it's a finding about whether a skill still
-works. Log it to that skill's own `fixtures/<skill-name>/results-log.md`
-instead.
+## How to use any fixture here
+
+1. Read that fixture's own `README.md` for what's planted and the exact
+   command to run.
+2. Run the skill against the fixture.
+3. Compare the actual output against that fixture's `expected-findings.md`.
+4. If something expected didn't get caught — or something *not* expected
+   got flagged — that's a real bug in the skill, not a fixture problem.
+   Fix the skill, not just this run.
+5. Append the result to that fixture's `results-log.md`.

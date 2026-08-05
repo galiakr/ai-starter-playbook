@@ -1,6 +1,6 @@
 ---
 name: security-review
-description: Judgment-level security review of the codebase — unsafe rendering/injection patterns, missing security headers, CORS misconfiguration, npm audit findings triaged for actual exploitability, and secrets that may exist in git history from before secret scanning was added. Does not duplicate the gitleaks/npm audit checks already run in CI — trigger when the user asks for a security review, security audit, or to check for vulnerabilities beyond what CI already gates on.
+description: Judgment-level security review of the codebase — unsafe rendering/injection patterns, missing security headers, CORS misconfiguration, npm audit findings triaged for actual exploitability, and secrets in either git history (from before secret scanning was added) or the current working tree (code that hasn't reached CI yet). Does not duplicate the gitleaks/npm audit checks already run in CI — trigger when the user asks for a security review, security audit, or to check for vulnerabilities beyond what CI already gates on.
 ---
 
 # Security Review Skill
@@ -38,7 +38,15 @@ grep -rn "dangerouslySetInnerHTML" src/
 grep -rn "\.innerHTML\s*=" src/
 grep -rn "\bv-html\b" src/          # Vue
 grep -rn "\beval(\|new Function(" src/
+grep -rn "__html\s*:" src/          # a function building the unsafe payload, not just the JSX call site consuming it
 ```
+
+That last pattern exists because a call site and the function that builds
+its payload aren't always in the same file — a helper can return
+`{ __html: someValue }` with zero sanitization, and grepping only for the
+literal string `dangerouslySetInnerHTML` misses it entirely if the JSX
+consumer lives elsewhere (or isn't in this codebase at all, e.g. a shared
+component library). Recognize the shape, not just the call site.
 
 If there's a backend with database access, also grep for
 string-concatenated queries instead of parameterized ones — cheap enough
@@ -106,36 +114,52 @@ Report this as a triage layer on top of what `npm audit` already says —
 prioritizing, N-M are transitive/build-time and lower urgency" — not a
 re-listing of the raw audit output.
 
-### 5. Secrets in git history
+### 5. Secrets in history, and secrets in code that hasn't reached CI yet
 
-`gitleaks` in CI only scans commits going forward from when it was added —
-it does not retroactively clean history. Check whether a secret might
-already be sitting in an old commit using the same tool, not a hand-rolled
-grep — a real secret-detection engine has hundreds of provider-specific
-patterns (AWS, Stripe, GitHub tokens, private keys, …) and entropy
-checks that a keyword grep can't replicate:
+This step covers two different gaps in CI's coverage, not one:
+
+**a. Old history.** `gitleaks` in CI only scans commits going forward from
+when it was added — it does not retroactively clean history. Check
+whether a secret might already be sitting in an old commit using the same
+tool, not a hand-rolled grep — a real secret-detection engine has hundreds
+of provider-specific patterns (AWS, Stripe, GitHub tokens, private keys, …)
+and entropy checks that a keyword grep can't replicate:
 
 ```bash
 gitleaks detect --source . --log-opts="--all" --report-format json --report-path /tmp/gitleaks-history.json --exit-code 0
 ```
 
-If `gitleaks` isn't installed, fall back to a coarse grep and say
-explicitly that this is a degraded check, not a substitute:
+**b. Code that hasn't been pushed yet.** CI's gate only runs on push — it
+has nothing to say about a hardcoded credential sitting in code you're
+reviewing right now, before it's committed or pushed. This isn't
+duplicating CI; it's covering the gap in time *before* CI would ever see
+it (reviewing a branch pre-push, or reviewing working-tree changes
+directly). Scan the current files regardless of git state:
+
+```bash
+gitleaks detect --source . --no-git --report-format json --report-path /tmp/gitleaks-current.json --exit-code 0
+```
+
+If `gitleaks` isn't installed, fall back to a coarse grep against both —
+git history and the current tree — and say explicitly that this is a
+degraded check, not a substitute:
 
 ```bash
 git log --all -p | grep -iE "api[_-]?key|secret|password|token" | head -50
+grep -rnE "://[^/[:space:]:]+:[^/[:space:]@]+@" . 2>/dev/null   # credentials embedded in connection strings
 ```
 
 Either way, your job here is the same as step 4's: **triage, don't
 re-derive.** `gitleaks` already found (or didn't find) the matches —
-read its JSON report and, for each hit, check whether it looks like a
+read its JSON report(s) and, for each hit, check whether it looks like a
 real credential (a matching secret _value_, not just a variable named
 `api_key` assigned a placeholder like `"your-key-here"`) and whether it's
-already rotated/invalid. Report "gitleaks found N matches in history; M
-look like real, still-live credentials worth rotating now, N-M are
-placeholders/test fixtures" — not a re-listing of the raw report. If you
-fell back to the grep because `gitleaks` wasn't installed, say so and
-recommend the user run `gitleaks detect --log-opts="--all"` (or
+already rotated/invalid. Report "gitleaks found N matches (M in history,
+K in current code); J look like real, still-live credentials worth
+rotating now, N-J are placeholders/test fixtures" — not a re-listing of
+the raw reports. If you fell back to the grep because `gitleaks` wasn't
+installed, say so and recommend the user run
+`gitleaks detect --log-opts="--all"` and `gitleaks detect --no-git` (or
 `trufflehog`) themselves before trusting the result as clean.
 
 ### 6. .env and .gitignore hygiene
@@ -153,7 +177,7 @@ git log --all --full-history -- .env
 Append one row to `metrics/findings-log.md`: date, project,
 `security-review`, an outcome (`Clean`, `Found → Fixed`, or
 `Found — open`), and one sentence naming the finding count by category
-(rendering, auth, headers, audit triage, history).
+(rendering, auth, headers, audit triage, secrets).
 
 ## Output Format
 
@@ -187,7 +211,7 @@ professional audit before relying on this alone.
 | Auth boundaries | 0 |
 | Headers/CORS | 0 |
 | Audit triage (reachable) | 0 |
-| Git history | 0 |
+| Secrets (history + current tree) | 0 |
 
 **Overall:** [one line — e.g. "1 finding requiring a fix before this handles real user content."]
 
