@@ -87,6 +87,30 @@ impression.
 - Never use `--no-verify` to skip a hook. If `.githooks/pre-commit` or
   `pre-push` is blocking you, fix the underlying issue.
 
+## Git hygiene
+
+- **Direct commits to `main` are the norm here, not an oversight.** This
+  is a solo-maintained repo — one committer, so a PR-to-self workflow
+  would be ceremony without a second reviewer to justify it. `ai/AGENTS.md`
+  (the template shipped to *other* projects) says "never commit directly
+  to main" because that rule earns its keep once there's a team; it isn't
+  being applied to this repo about itself, deliberately.
+- CI still gates every push to `main`, not just PRs — `.github/workflows/ci.yml`
+  runs on `push: branches: [main]` specifically because there's no
+  required-status-check branch protection blocking a bad commit *before*
+  it lands. The trade-off is real: a broken commit gets caught right
+  after landing, not before. `.githooks/pre-commit`/`pre-push` exist to
+  catch most of that locally, before it's even pushed.
+- `.github/pull_request_template.md` and `.github/ISSUE_TEMPLATE/` still
+  exist and still matter even though the maintainer's own commits don't
+  go through them — dependabot's automated PRs land in this repo's PR
+  surface, and they're what an outside contributor would see if this repo
+  ever took an external PR.
+- One logical change per commit, and a message that explains *why* — still
+  true here regardless of the above. It's about keeping `git log` useful
+  later, not about review ceremony.
+- Never use `--no-verify` to skip a hook, here or anywhere it's set up.
+
 ## Local checks
 
 ```bash
