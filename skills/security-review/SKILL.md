@@ -20,7 +20,18 @@ This skill's value is entirely in the parts CI doesn't cover.
 
 ### 1. Unsafe rendering and injection patterns
 
-Grep for patterns that bypass a framework's built-in escaping:
+Run a real static analysis tool against a maintained ruleset, not just a
+handful of hand-picked greps — the same reasoning as step 5: a few
+patterns you thought to write down will always miss more than a
+maintained ruleset covers.
+
+```bash
+semgrep scan --config p/owasp-top-ten --config p/react --json --output /tmp/semgrep-report.json .
+```
+
+If `semgrep` isn't installed, fall back to grepping the specific patterns
+below and say explicitly that this is a degraded check, narrower than
+what a real ruleset would catch:
 
 ```bash
 grep -rn "dangerouslySetInnerHTML" src/
@@ -29,16 +40,23 @@ grep -rn "\bv-html\b" src/          # Vue
 grep -rn "\beval(\|new Function(" src/
 ```
 
-For each match, check whether the value being inserted is user-controlled
-or comes from a trusted, static source. Flag only the former — a static
-string passed to `dangerouslySetInnerHTML` isn't a finding.
-
-If there's a backend with database access, check for string-concatenated
-queries instead of parameterized ones:
+If there's a backend with database access, also grep for
+string-concatenated queries instead of parameterized ones — cheap enough
+to run either way, on top of whatever `semgrep`'s SQL-injection rules
+catch:
 
 ```bash
 grep -rn "SELECT.*\+\|query(\`" server/ api/ 2>/dev/null
 ```
+
+Same triage rule as steps 4 and 5: the tool finds candidates, your job is
+to judge each one, not re-list them. For each match, check whether the
+value being inserted is user-controlled or comes from a trusted, static
+source — flag only the former. A static string passed to
+`dangerouslySetInnerHTML` isn't a finding, even if the tool flags the
+line. If you fell back to the grep because `semgrep` wasn't installed,
+say so and recommend the user run the full scan themselves before
+trusting the result as clean.
 
 ### 2. Auth and authorization boundaries
 
@@ -49,6 +67,12 @@ If the project has API routes or a backend:
   if you find one being treated as if it were.
 - Check for IDOR-shaped bugs: an endpoint that takes an ID (`/api/orders/:id`)
   without confirming the requesting user owns that resource.
+- Check state-changing routes (POST/PUT/PATCH/DELETE) for CSRF protection —
+  a token, `SameSite=Strict`/`Lax` cookies, or origin/referrer checking.
+  A cookie-authenticated route with none of these is a real finding; a
+  route authenticated by a bearer token in a header isn't CSRF-exposed the
+  same way, since a cross-site form can't set that header — don't flag it
+  as if it were.
 
 If the project is client-only (a static SPA with no backend, common for
 portfolio projects), say so explicitly and note that no server-side
@@ -86,16 +110,33 @@ re-listing of the raw audit output.
 
 `gitleaks` in CI only scans commits going forward from when it was added —
 it does not retroactively clean history. Check whether a secret might
-already be sitting in an old commit:
+already be sitting in an old commit using the same tool, not a hand-rolled
+grep — a real secret-detection engine has hundreds of provider-specific
+patterns (AWS, Stripe, GitHub tokens, private keys, …) and entropy
+checks that a keyword grep can't replicate:
+
+```bash
+gitleaks detect --source . --log-opts="--all" --report-format json --report-path /tmp/gitleaks-history.json --exit-code 0
+```
+
+If `gitleaks` isn't installed, fall back to a coarse grep and say
+explicitly that this is a degraded check, not a substitute:
 
 ```bash
 git log --all -p | grep -iE "api[_-]?key|secret|password|token" | head -50
 ```
 
-This is a coarse grep, not a full scan — flag anything suspicious for the
-user to investigate with a proper history-scanning tool
-(`gitleaks detect --log-opts="--all"` or `trufflehog`) rather than treating
-a miss here as clean.
+Either way, your job here is the same as step 4's: **triage, don't
+re-derive.** `gitleaks` already found (or didn't find) the matches —
+read its JSON report and, for each hit, check whether it looks like a
+real credential (a matching secret _value_, not just a variable named
+`api_key` assigned a placeholder like `"your-key-here"`) and whether it's
+already rotated/invalid. Report "gitleaks found N matches in history; M
+look like real, still-live credentials worth rotating now, N-M are
+placeholders/test fixtures" — not a re-listing of the raw report. If you
+fell back to the grep because `gitleaks` wasn't installed, say so and
+recommend the user run `gitleaks detect --log-opts="--all"` (or
+`trufflehog`) themselves before trusting the result as clean.
 
 ### 6. .env and .gitignore hygiene
 
